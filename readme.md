@@ -9,7 +9,7 @@ This program is made possible thanks to another repository: [NFTGrabber](https:/
  ## How to run?
  
  - First, download some NFT images:
-    - install depen`npm start`
+    - install dependencies: `npm start`
     - run `npm start [link]` *(ex:"npm start https://rarible.com/boredapeyachtclub")*
     
  - Then use `avif_converter.py` to convert the images in PNG
