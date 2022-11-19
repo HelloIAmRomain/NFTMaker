@@ -1,15 +1,15 @@
-# NFT Grabber
+# NFT Maker
 
-Save a smorgasbord of NFTs with this script. Point it at a rarible.com collection page and watch in awe as the entire collection is transferred to your hard drive. No $$$ required.
+The aim to this program is to use a Deep Convolutional GAN (Generative Adversarial Network) using [Tensorflow](https://www.tensorflow.org/tutorials/generative/dcgan).
 
-## Installation
 
-Install all dependencies with `npm install`.
+This program is made possible thanks to another repository: [NFTGrabber](https://github.com/ericmurphyxyz/nftgrabber)
 
-## Usage
 
-Run `npm start` and pass in a rarible.com URL. Example:
+## Author
 
-```shell
-npm start https://rarible.com/boredapeyachtclub
-```
+Romain Dodet
+
+- Twitter🐦: @Romain_Dodet_
+
+Hope it will be helpful :)
