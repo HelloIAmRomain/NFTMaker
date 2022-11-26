@@ -5,12 +5,12 @@ This program is a GAN that generates images 400x400x3 like NFTs apes.
 import os
 import numpy as np
 import tensorflow as tf
-import imageio
+# import imageio
 import matplotlib.pyplot as plt
-import PIL
+# import PIL
 from PIL import Image
 import time
-from tensorflow.keras.layers import Conv2D, Dense, Flatten, LeakyReLU, InputLayer, GlobalAveragePooling2D, Reshape, Conv2DTranspose, ReLU
+from tensorflow.keras.layers import Conv2D, Dense, Flatten, LeakyReLU, InputLayer, GlobalAveragePooling2D, Reshape, Conv2DTranspose, ReLU, Dropout
 import argparse
 from tqdm import tqdm
 
@@ -19,7 +19,8 @@ def load_image_png(image_path):
     image = tf.io.read_file(image_path)
     image = tf.image.decode_png(image, channels=3)
     image = tf.image.convert_image_dtype(image, tf.float32)
-    image = tf.image.resize(image, [400, 400])
+    # Downscale the image to [64, 64]
+    image = tf.image.resize(image, [64, 64])
     return image
 
 
@@ -43,10 +44,11 @@ def load_dataset(image_dir):
 # Variables
 ############################################################################################################
 generator_in_channels = 128
-discriminator_in_channels = (400, 400, 3)
+discriminator_in_channels = (64, 64, 3)
+values_image = np.prod(discriminator_in_channels)
 batch_size = 8
 epochs = 1000
-n_train_generator = 64
+n_train_generator = 128
 
 
 ########################################################################################################################
@@ -55,10 +57,10 @@ n_train_generator = 64
 
 
 discriminator = tf.keras.Sequential([
-    InputLayer(input_shape=(400, 400, 3)),
-    Conv2D(128, 5, strides=2, padding='same'),
+    InputLayer(input_shape=discriminator_in_channels),
+    Conv2D(32, 5, strides=2, padding='same'),
     ReLU(),
-    Conv2D(128, 5, strides=2, padding='same'),
+    Conv2D(64, 5, strides=2, padding='same'),
     Conv2D(64, (3,3 ), strides=(2, 2), padding='same'),
     LeakyReLU(alpha=0.2),
     Conv2D(128, (3, 3), strides=(2, 2), padding='same'),
@@ -70,22 +72,25 @@ discriminator = tf.keras.Sequential([
     Dense(16, activation='relu'),
     Dense(8, activation='relu'),
     Dense(4, activation='sigmoid'),
-    Dense(1, activation='sigmoid')
+    Dense(1, activation='sigmoid'),
 ])
 
 print(discriminator.summary())
 
 
-# Generator model (output shape: 400x400x3)
+# Generator model
 generator = tf.keras.Sequential([
     InputLayer(input_shape=(generator_in_channels,)),
-    Dense(10_000, activation='relu'),
-    Reshape((25, 25, 16)),
-    Conv2DTranspose(64, (3, 3), strides=(2, 2), padding='same'),
-    LeakyReLU(alpha=0.2),
-    Conv2DTranspose(32, (3, 3), strides=(2, 2), padding='same'),
-    LeakyReLU(alpha=0.2),
-    Conv2DTranspose(3, (3, 3), strides=(4, 4), padding='same', activation='sigmoid'),
+    Dense(values_image//16, activation='relu'),
+    Dropout(0.2),
+    Dense(values_image//8, activation='tanh'),
+    Dense(values_image//8, activation='tanh'),
+    Dense(values_image//4, activation='tanh'),
+    Dropout(0.2),
+    # Dense(values_image//2, activation='relu'),
+    Dropout(0.2),
+    Dense(values_image, activation='sigmoid'),
+    Reshape(discriminator_in_channels),
 ])
 
 print(generator.summary())
@@ -210,13 +215,13 @@ gan.compile(d_optimizer=tf.keras.optimizers.Adam(learning_rate=0.0002, beta_1=0.
             )
 
 
-for epoch in tqdm(range(epochs)):
+for epoch in range(epochs):
+    t_epoch = -time.time()
     print('Epoch: ', epoch)
-    for step, real_images in enumerate(train_dataset):
+    
+    for step, real_images in tqdm(enumerate(train_dataset)):
         gan.train_step(real_images)
     
-    #for tr_gen in range(n_train_generator):
-    #    gan.train_generator()
 
     print('Discriminator loss: ', gan.d_loss_tracker.result())
     print('Generator loss: ', gan.g_loss_tracker.result())
@@ -225,12 +230,13 @@ for epoch in tqdm(range(epochs)):
     discriminator.save_weights('discriminator_weights.h5')
 
     # Save a generated image every epoch
-    random_latent_vectors = tf.random.normal(shape=(1, generator_in_channels))
-    generated_image = generator(random_latent_vectors)
-    generated_image = generated_image.numpy()
-    generated_image = generated_image.reshape(400, 400, 3)
+    random_latent_vectors = tf.random.normal(shape=(generator_in_channels))
+    generated_image = generator.predict_on_batch(random_latent_vectors)
+    # generated_image = generated_image.numpy()
     generated_image = generated_image * 255
-    generated_image = generated_image.astype(np.uint8)
+    print(generated_image.shape)
+    generated_image = generated_image.reshape(discriminator_in_channels)
+    # generated_image = generated_image.astype(np.uint8)
     im = Image.fromarray(generated_image)
     im.save('generated_images/generated_image_' + str(epoch) + '.png')
 
@@ -242,7 +248,7 @@ for epoch in tqdm(range(epochs)):
     gan.d_loss_tracker.reset_states()
     gan.g_loss_tracker.reset_states()
 
-    print('Epoch: ', epoch, ' completed')
+    print('Epoch: ', epoch, ' completed in', t_epoch+time.time(), "seconds")
 
 
 
@@ -261,7 +267,7 @@ plt.show()
 random_latent_vectors = tf.random.normal(shape=(10, generator_in_channels))
 generated_images = gan.generator(random_latent_vectors)
 generated_images = generated_images * 255
-generated_images = generated_images.numpy()
+# generated_images = generated_images.numpy()
 
 fig, axs = plt.subplots(2, 5, figsize=(10, 10))
 for i, ax in enumerate(axs.flat):
