@@ -14,7 +14,7 @@ This program is made possible thanks to another repository: [NFTGrabber](https:/
     
  - Then use `avif_converter.py` to convert the images in PNG
  
- - Finally run `gan.py` to run the gan
+ - Finally run `gan_2_tf_module.py` to run the gan
  
  In an epoch, the discriminator is trained wuth the database, then the generator is trained using the discriminator
  
