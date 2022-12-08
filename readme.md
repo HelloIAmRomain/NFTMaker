@@ -21,6 +21,13 @@ This program is made possible thanks to another repository: [NFTGrabber](https:/
  At the end of each epoch, an image is saved to the [generated_images](generated_images) folder
 
 
+## Updates
+
+For now, the program is made to generate 64x64x3 RGB images. It reshapes the input images with output shape so the inputs can be different.
+
+In the future, the output size can be an argument, or can be chosen to match the input shape.
+
+
 ## Author
 
 Romain Dodet
